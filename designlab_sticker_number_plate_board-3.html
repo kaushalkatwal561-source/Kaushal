@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DesignLab — Stickers • Number Plates • Boards</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2e;--panel2:#18233d;--text:#f6f7fb;--muted:#9aa6bd;--accent:#7c5cff;--line:#263451}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(135deg,#090d19,#101a31);color:var(--text)}
+header{position:sticky;top:0;z-index:5;background:rgba(9,13,25,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:14px 5%;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:22px}.logo span{color:#8c73ff}
+nav button,.tool{background:none;border:0;color:var(--muted);font-weight:700;cursor:pointer;padding:9px 12px;border-radius:10px}nav button:hover,.tool:hover{background:var(--panel2);color:white}
+.hero{padding:55px 5% 25px;max-width:1100px;margin:auto}.hero h1{font-size:clamp(34px,6vw,62px);line-height:1;margin:0 0 14px}.hero p{color:var(--muted);font-size:18px;max-width:680px}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:25px auto;max-width:1100px;padding:0 5%}.tab{padding:12px 18px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:white;cursor:pointer}.tab.active{background:var(--accent);border-color:var(--accent)}
+.app{max-width:1100px;margin:auto;padding:0 5% 50px}.layout{display:grid;grid-template-columns:310px 1fr;gap:18px}.panel{background:rgba(18,26,46,.92);border:1px solid var(--line);border-radius:18px;padding:18px}.panel h3{margin-top:0}
+label{display:block;color:var(--muted);font-size:13px;margin:14px 0 6px}input,select,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0d1426;color:white;outline:none}input[type=color]{padding:3px;height:42px}
+button.primary{width:100%;border:0;border-radius:11px;padding:12px;background:var(--accent);color:white;font-weight:800;cursor:pointer;margin-top:12px}
+.canvas-wrap{min-height:560px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#202c49,#0b1020);border-radius:18px;overflow:hidden}
+canvas{max-width:94%;max-height:520px;border-radius:8px;box-shadow:0 20px 60px #0008;background:white}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.quick button{padding:10px;border:1px solid var(--line);background:var(--panel2);color:white;border-radius:10px;cursor:pointer}
+.hidden{display:none}.note{font-size:12px;color:var(--muted);margin-top:10px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.canvas-wrap{min-height:430px}.quick{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Design<span>Lab</span></div>
+  <nav><button onclick="setMode('sticker')">Stickers</button><button onclick="setMode('plate')">Number Plates</button><button onclick="setMode('board')">Boards</button></nav>
+</header>
+
+<section class="hero">
+  <h1>Make it. Print it. <span style="color:#8c73ff">Done.</span></h1>
+  <p>A simple browser design studio for stickers, vehicle number plates and sign boards. Customize the text, colors and size, then export a PNG.</p>
+</section>
+
+<div class="tabs">
+  <button class="tab active" id="tab-sticker" onclick="setMode('sticker')">🏷️ Sticker</button>
+  <button class="tab" id="tab-plate" onclick="setMode('plate')">🚗 Number Plate</button>
+  <button class="tab" id="tab-board" onclick="setMode('board')">🪧 Board</button>
+</div>
+
+<main class="app">
+<div class="layout">
+  <aside class="panel">
+    <h3 id="modeTitle">Sticker Designer</h3>
+
+    <label>Design text</label>
+    <input id="text" value="YOUR STICKER" oninput="draw()">
+
+    <label>Subtitle</label>
+    <input id="sub" value="CUSTOM DESIGN" oninput="draw()">
+
+    <label>Background</label>
+    <input id="bg" type="color" value="#ffffff" oninput="draw()">
+
+    <label>Text color</label>
+    <input id="fg" type="color" value="#111111" oninput="draw()">
+
+    <label>Font</label>
+    <select id="font" onchange="draw()">
+      <option>Arial</option><option>Impact</option><option>Georgia</option><option>Courier New</option>
+    </select>
+
+    <label>Shape / style</label>
+    <select id="style" onchange="draw()">
+      <option value="rounded">Rounded</option><option value="circle">Circle</option><option value="rect">Rectangle</option>
+    </select>
+
+    <button class="primary" onclick="downloadDesign()">⬇ Export PNG</button>
+    <div class="quick">
+      <button onclick="preset('bold')">Bold</button>
+      <button onclick="preset('clean')">Clean</button>
+      <button onclick="preset('dark')">Dark</button>
+    </div>
+    <p class="note">Tip: for printing, use the exported PNG at the highest available resolution.</p>
+  </aside>
+
+  <section class="panel canvas-wrap">
+    <canvas id="canvas" width="1000" height="650"></canvas>
+  </section>
+</div>
+</main>
+
+<script>
+let mode='sticker';
+const c=document.getElementById('canvas'),x=c.getContext('2d');
+
+function setMode(m){
+ mode=m;
+ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+ document.getElementById('tab-'+m).classList.add('active');
+ const title={sticker:'Sticker Designer',plate:'Number Plate Designer',board:'Board Designer'}[m];
+ document.getElementById('modeTitle').textContent=title;
+ if(m==='plate'){text.value='BA 12 PA 3456';sub.value='NEPAL';bg.value='#ffffff';fg.value='#111111';style.value='rect'}
+ if(m==='board'){text.value='WELCOME';sub.value='YOUR BUSINESS • OPEN DAILY';bg.value='#173b2a';fg.value='#ffffff';style.value='rect'}
+ if(m==='sticker'){text.value='YOUR STICKER';sub.value='CUSTOM DESIGN';bg.value='#ffffff';fg.value='#111111';style.value='rounded'}
+ draw();
+}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function draw(){
+ x.clearRect(0,0,c.width,c.height);
+ let bgc=bg.value, fgc=fg.value, s=style.value;
+ if(mode==='plate'){drawPlate(bgc,fgc);return}
+ x.fillStyle=bgc;
+ if(s==='circle'){x.beginPath();x.arc(500,325,260,0,Math.PI*2);x.fill()}
+ else if(s==='rect'){x.fillRect(110,110,780,430)}
+ else rr(x,90,100,820,450,60);
+ x.fillStyle=fgc;x.textAlign='center';x.textBaseline='middle';
+ x.font=`900 ${mode==='board'?108:96}px ${font.value}`;
+ x.fillText(text.value,500,300);
+ x.font=`700 34px ${font.value}`;
+ x.fillText(sub.value,500,390);
+}
+function drawPlate(bgc,fgc){
+ x.fillStyle='#d9dce2';x.fillRect(60,180,880,290);
+ x.strokeStyle='#555';x.lineWidth=8;x.strokeRect(60,180,880,290);
+ x.fillStyle='#0d5bb5';x.fillRect(60,180,95,290);
+ x.fillStyle='white';x.font='700 30px Arial';x.textAlign='center';x.fillText('NP',107,235);x.fillText('NEPAL',107,275);
+ x.fillStyle=fgc;x.textAlign='center';x.font='900 105px Arial';x.fillText(text.value,545,320);
+ x.font='700 28px Arial';x.fillText(sub.value,545,390);
+}
+function preset(p){
+ if(p==='bold'){fg.value='#ffffff';bg.value='#111111'}
+ if(p==='clean'){fg.value='#111111';bg.value='#ffffff'}
+ if(p==='dark'){fg.value='#ffffff';bg.value='#173b2a'}
+ draw();
+}
+function downloadDesign(){
+ const a=document.createElement('a');a.download=`designlab-${mode}.png`;a.href=c.toDataURL('image/png');a.click();
+}
+draw();
+</script>
+</body>
+</html>
